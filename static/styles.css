@@ -1,0 +1,296 @@
+/* styles.css */
+body {
+  background: #000;
+  color: white;
+  font-family: sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+header {
+  text-align: center;
+  padding: 20px;
+  position: relative;
+}
+
+header h1 {
+  font-size: 2rem;
+  letter-spacing: 2px;
+}
+
+.logo {
+  position: absolute;
+  top: 10px;
+  right: 20px;
+  height: 50px;
+}
+
+.barra-busqueda {
+  display: flex;
+  justify-content: center;
+  margin: 20px auto;
+}
+
+.barra-busqueda input {
+  width: 50%;
+  padding: 12px 20px;
+  font-size: 16px;
+  border-radius: 30px;
+  border: none;
+  outline: none;
+  background: #fff;
+  color: #000;
+}
+
+.mensaje-vacio {
+  text-align: center;
+  color: #888;
+  margin-top: 50px;
+  font-style: italic;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+  padding: 20px;
+}
+
+.tarjeta {
+  background: white;
+  border-radius: 18px;
+  position: relative;
+  padding: 15px 10px 10px 10px;
+  color: #b5002d;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.etiqueta {
+  position: absolute;
+  top: -12px;
+  left: -12px;
+  background: #b5002d;
+  color: white;
+  padding: 10px 15px;
+  font-weight: bold;
+  border-radius: 30px;
+  font-size: 18px;
+}
+
+.nombre {
+  margin-top: 30px;
+  font-weight: bold;
+  text-align: center;
+}
+
+.acciones {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 10px;
+  width: 100%;
+}
+
+.acciones button {
+  background: #b5002d;
+  border: none;
+  border-radius: 50%;
+  color: white;
+  font-size: 16px;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.subir-btn {
+  background: #b5002d;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  position: relative;
+}
+
+.subir-btn input {
+  display: none;
+}
+
+.flotante {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #b5002d;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  font-size: 28px;
+  width: 50px;
+  height: 50px;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  bottom: 80px;
+  right: 90px;
+  z-index: 999;
+}
+
+.modal-content {
+  background: #000;
+  border-radius: 20px;
+  padding: 30px;
+  width: 300px;
+  box-shadow: 0 0 20px #800020;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.modal-content h2 {
+  text-align: center;
+  color: white;
+  margin: 0;
+}
+
+.modal-content label {
+  color: #b5002d;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.modal-content input {
+  padding: 12px;
+  border: none;
+  border-radius: 30px;
+  background: white;
+  color: black;
+  font-size: 16px;
+  width: 100%;
+}
+
+.modal-content .botones {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.modal-content button {
+  background: #b5002d;
+  color: white;
+  padding: 12px;
+  border: none;
+  border-radius: 30px;
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+  flex: 1;
+}
+
+.modal-content .cancelar {
+  background: #444;
+}
+
+.vista-carpeta {
+  padding: 20px;
+}
+
+.vista-carpeta h2 {
+  color: #fff;
+  margin-bottom: 10px;
+}
+
+.volver {
+  margin-bottom: 20px;
+  background: #b5002d;
+  border: none;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 30px;
+  cursor: pointer;
+}
+
+.tabla-estilizada {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  color: white;
+}
+
+.tabla-estilizada th {
+  color: #b5002d;
+  font-size: 18px;
+  padding: 12px 0;
+  border-bottom: 2px solid #b5002d;
+  text-align: center;
+}
+
+.tabla-estilizada td {
+  border: 1px solid #b5002d55;
+  padding: 12px;
+  text-align: center;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.checkbox-cuadro {
+  width: 24px;
+  height: 24px;
+  background: #b5002d;
+  border-radius: 4px;
+  display: inline-block;
+  cursor: pointer;
+}
+
+.checkbox-cuadro.checked::after {
+  content: '✔';
+  color: lime;
+  font-weight: bold;
+  display: block;
+  text-align: center;
+  line-height: 24px;
+}
+
+.boton-agregar-habiente {
+  margin-top: 20px;
+  background: #b5002d;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 30px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.tabla-habiente {
+  margin-top: 30px;
+}
+
+.tabla-habiente h3 {
+  color: #b5002d;
+  margin-bottom: 10px;
+}
+
+.tabla-habiente table {
+  width: 100%;
+  border-collapse: collapse;
+  color: white;
+  margin-top: 10px;
+}
+
+.tabla-habiente td, .tabla-habiente th {
+  border: 1px solid #b5002d;
+  padding: 10px;
+  text-align: center;
+}

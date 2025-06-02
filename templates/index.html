@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mayoreos</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header>
+    <h1>MAYOREOS</h1>
+    <img src="/static/logo.png" alt="Prohats" class="logo" />
+  </header>
+
+  <div class="barra-busqueda">
+    <input type="text" id="busqueda" placeholder="Buscar carpeta..." oninput="filtrarCarpetas()">
+  </div>
+
+  <div class="grid" id="carpetas"></div>
+  <div id="vistaCarpeta" class="vista-carpeta" style="display: none;"></div>
+
+  <button class="flotante" onclick="mostrarFormulario()">＋</button>
+
+  <div id="modal" class="modal">
+    <div class="modal-content">
+      <h2>AGREGAR MAYOREOS</h2>
+      <label for="nombreCliente">MAYOREO</label>
+      <input type="text" id="nombreCliente" placeholder="Ej: PALOMINO HATS">
+      <label for="idCliente">ID</label>
+      <input type="text" id="idCliente" placeholder="Ej: 2191">
+      <div class="botones">
+        <button onclick="crearCarpeta()">AGREGAR</button>
+        <button class="cancelar" onclick="cerrarFormulario()">CANCELAR</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let carpetasOriginales = [];
+
+    async function cargarCarpetas() {
+      const res = await fetch('/carpetas');
+      const data = await res.json();
+      carpetasOriginales = data.carpetas;
+      mostrarCarpetas(carpetasOriginales);
+    }
+
+    function mostrarCarpetas(lista) {
+      const cont = document.getElementById('carpetas');
+      cont.innerHTML = '';
+      if (lista.length === 0) {
+        cont.innerHTML = '<p class="mensaje-vacio">Aún no hay carpetas creadas</p>';
+        return;
+      }
+      lista.forEach(nombre => {
+        const partes = nombre.split(' - ');
+        const id = partes[0];
+        const cliente = partes[1] || 'Cliente';
+        cont.innerHTML += `
+          <div class="tarjeta">
+            <div class="etiqueta">${id}</div>
+            <div class="nombre">${cliente}</div>
+            <div class="acciones">
+              <button onclick="abrirCarpeta('${nombre}')">👁️</button>
+              <button onclick="eliminarCarpeta('${nombre}')">🗑️</button>
+              <label class="subir-btn">
+                📎<input type="file" onchange="subirPDF(event, '${nombre}')">
+              </label>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    function filtrarCarpetas() {
+      const texto = document.getElementById('busqueda').value.toLowerCase();
+      const filtradas = carpetasOriginales.filter(nombre => nombre.toLowerCase().includes(texto));
+      mostrarCarpetas(filtradas);
+    }
+
+    function mostrarFormulario() {
+      document.getElementById('modal').style.display = 'flex';
+    }
+
+    function cerrarFormulario() {
+      document.getElementById('modal').style.display = 'none';
+    }
+
+    async function crearCarpeta() {
+      const nombre = document.getElementById('nombreCliente').value.trim();
+      const id = document.getElementById('idCliente').value.trim();
+      if (!nombre || !id) return alert('Completa ambos campos');
+      await fetch('/crear_carpeta', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre: `${id} - ${nombre}` })
+      });
+      document.getElementById('nombreCliente').value = '';
+      document.getElementById('idCliente').value = '';
+      cerrarFormulario();
+      cargarCarpetas();
+    }
+
+    async function eliminarCarpeta(nombre) {
+      if (!confirm(`¿Eliminar carpeta "${nombre}" con todo su contenido?`)) return;
+      await fetch(`/eliminar_carpeta/${encodeURIComponent(nombre)}`, { method: 'DELETE' });
+      cargarCarpetas();
+    }
+
+    async function subirPDF(event, carpeta) {
+      const archivo = event.target.files[0];
+      if (!archivo) return;
+      const formData = new FormData();
+      formData.append('archivo', archivo);
+      await fetch(`/subir/${encodeURIComponent(carpeta)}`, {
+        method: 'POST',
+        body: formData
+      });
+      alert('PDF subido con éxito');
+    }
+
+    function cerrarVistaCarpeta() {
+      document.getElementById('vistaCarpeta').style.display = 'none';
+      document.getElementById('carpetas').style.display = 'grid';
+    }
+
+    function eliminarFila(btn) {
+      const fila = btn.closest('tr');
+      fila.remove();
+      guardarHabientes();
+    }
+
+    async function abrirCarpeta(nombre) {
+      document.getElementById('carpetas').style.display = 'none';
+      const vista = document.getElementById('vistaCarpeta');
+      vista.innerHTML = '';
+
+      const header = document.createElement('div');
+      header.innerHTML = `
+        <button class="volver" onclick="cerrarVistaCarpeta()">← Volver</button>
+        <h2>📁 ${nombre}</h2>
+      `;
+      vista.appendChild(header);
+
+      const tablaRes = await fetch(`/productos/${encodeURIComponent(nombre)}`);
+      const tablaJson = await tablaRes.json();
+
+      const tabla = document.createElement('table');
+      tabla.classList.add('tabla-estilizada');
+      tabla.innerHTML = `
+        <thead>
+          <tr>
+            <th></th><th>Modelo</th><th>Material</th><th>QTY</th><th>Eliminar</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-principal">
+          ${tablaJson.tabla.map(([model, material, qty]) => {
+            const isTotal = material === 'TOTAL';
+            return `
+              <tr style="${isTotal ? 'background:#b5002d;color:white;font-weight:bold;' : ''}" data-modelo="${model}" data-material="${material}" data-qty="${qty}">
+                <td>${isTotal ? '' : `<input type="checkbox">`}</td>
+                <td>${model}</td>
+                <td>${material}</td>
+                <td>${qty}</td>
+                <td>${isTotal ? '' : '<button onclick="eliminarFila(this)">❌</button>'}</td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      `;
+      vista.appendChild(tabla);
+
+      const botonMover = document.createElement('button');
+      botonMover.textContent = 'Agregar a tabla habiente';
+      botonMover.className = 'boton-agregar-habiente';
+      botonMover.onclick = moverSeleccionados;
+      vista.appendChild(botonMover);
+
+      const tabla2 = document.createElement('table');
+      tabla2.classList.add('tabla-estilizada', 'tabla-habiente');
+      tabla2.innerHTML = `
+        <thead>
+          <tr><th>Modelo</th><th>Material</th><th>QTY</th><th>Eliminar</th></tr>
+        </thead>
+        <tbody id="tabla-habiente"></tbody>
+      `;
+      vista.appendChild(tabla2);
+
+      const habRes = await fetch(`/habientes/${nombre}`);
+      const habJson = await habRes.json();
+      habJson.habientes.forEach(([model, material, qty]) => {
+        const fila = document.createElement('tr');
+        fila.innerHTML = `
+          <td>${model}</td>
+          <td>${material}</td>
+          <td>
+            <button onclick="cambiarCantidad(this, -1)">➖</button>
+            <span class="qty">${qty}</span>
+            <button onclick="cambiarCantidad(this, 1)">➕</button>
+          </td>
+          <td><button onclick="eliminarFila(this)">❌</button></td>
+        `;
+        document.getElementById('tabla-habiente').appendChild(fila);
+      });
+
+      vista.style.display = 'block';
+    }
+
+    async function moverSeleccionados() {
+  const tablaPrincipal = document.querySelector('#tabla-principal');
+  const filas = [...tablaPrincipal.querySelectorAll('tr')];
+  const habienteBody = document.getElementById('tabla-habiente');
+
+  let nuevasFilas = [];
+  let totalActual = 0;
+
+  filas.forEach(fila => {
+    const checkbox = fila.querySelector('input[type="checkbox"]');
+    if (checkbox && checkbox.checked) {
+      const celdas = fila.querySelectorAll('td');
+      const modelo = celdas[1].innerText;
+      const material = celdas[2].innerText;
+      const qty = celdas[3].innerText;
+
+      // Nueva fila para habientes
+      const nuevaFila = document.createElement('tr');
+      nuevaFila.innerHTML = `
+        <td>${modelo}</td>
+        <td>${material}</td>
+        <td>
+          <button onclick="cambiarCantidad(this, -1)">➖</button>
+          <span class="qty">${qty}</span>
+          <button onclick="cambiarCantidad(this, 1)">➕</button>
+        </td>
+        <td><button onclick="eliminarFila(this)">❌</button></td>
+      `;
+      habienteBody.appendChild(nuevaFila);
+
+      fila.remove(); // Eliminar fila original de DOM
+    } else {
+      const celdas = fila.querySelectorAll('td');
+      if (celdas.length === 5 && celdas[2].innerText !== 'TOTAL') {
+        nuevasFilas.push([
+          celdas[1].innerText,
+          celdas[2].innerText,
+          parseInt(celdas[3].innerText)
+        ]);
+        totalActual += parseInt(celdas[3].innerText);
+      }
+    }
+  });
+
+  // Agregar fila TOTAL de nuevo
+  nuevasFilas.push(["", "TOTAL", totalActual]);
+
+  // Guardar nueva tabla principal (productos)
+  const carpeta = document.querySelector('h2').textContent.replace('📁', '').trim();
+  await fetch(`/actualizar_tabla/${carpeta}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(nuevasFilas)
+  });
+
+  // Guardar tabla habiente actualizada
+  const bodyHab = [...document.querySelectorAll('#tabla-habiente tr')].map(row => {
+    const celdas = row.querySelectorAll('td');
+    const qtySpan = celdas[2].querySelector('.qty');
+    return [celdas[0].innerText, celdas[1].innerText, parseInt(qtySpan?.innerText || '0')];
+  });
+
+  await fetch(`/guardar_habientes/${encodeURIComponent(carpeta)}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(bodyHab)
+  });
+}
+
+
+
+    function cambiarCantidad(btn, delta) {
+      const fila = btn.closest('tr');
+      const span = fila.querySelector('.qty');
+      let cantidad = parseInt(span.innerText);
+      cantidad += delta;
+
+      if (cantidad <= 0) {
+        fila.remove();
+      } else {
+        span.innerText = cantidad;
+      }
+
+      guardarHabientes();
+    }
+
+    function guardarHabientes() {
+      const carpeta = document.querySelector('h2').textContent.replace('📁', '').trim();
+      const bodyHab = [...document.querySelectorAll('#tabla-habiente tr')].map(row => {
+        const celdas = row.querySelectorAll('td');
+        const qtySpan = celdas[2].querySelector('.qty');
+        return [celdas[0].innerText, celdas[1].innerText, parseInt(qtySpan?.innerText || '0')];
+      });
+      const filtrado = bodyHab.filter(f => f[2] > 0);
+      fetch(`/guardar_habientes/${encodeURIComponent(carpeta)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(filtrado)
+      });
+    }
+
+    cargarCarpetas();
+  </script>
+</body>
+</html>
