@@ -73,6 +73,32 @@ def listar_carpetas():
     carpetas = Carpeta.query.all()
     return jsonify({'carpetas': [c.nombre for c in carpetas]})
 
+def extraer_productos_pdf(path):
+    productos = []
+    with pdfplumber.open(path) as pdf:
+        for page in pdf.pages:
+            tabla = page.extract_table()
+            if not tabla:
+                continue
+            headers = [c.upper().strip() if c else '' for c in tabla[0]]
+            if 'MATERIAL' in headers and 'MODEL' in headers:
+                i_material = headers.index('MATERIAL')
+                i_modelo = headers.index('MODEL')
+                for fila in tabla[1:]:
+                    if not fila or len(fila) <= max(i_material, i_modelo):
+                        continue
+                    material = fila[i_material].strip() if fila[i_material] else ''
+                    modelo = fila[i_modelo].strip() if fila[i_modelo] else ''
+                    if material and modelo:
+                        productos.append((material, modelo))
+    return productos
+
+def contar_productos(productos):
+    conteo = defaultdict(int)
+    for mat, mod in productos:
+        conteo[(mat, mod)] += 1
+    return [{'material': mat, 'modelo': mod, 'qty': qty} for (mat, mod), qty in conteo.items()]
+
 @app.route('/subir/<carpeta>', methods=['POST'])
 def subir_archivo(carpeta):
     if 'archivo' not in request.files:
@@ -94,47 +120,16 @@ def subir_archivo(carpeta):
     db.session.add(Archivo(carpeta_id=carpeta_obj.id, nombre=nombre_seguro))
     Producto.query.filter_by(carpeta_id=carpeta_obj.id).delete()
 
-    contador = defaultdict(int)
-    with pdfplumber.open(ruta_archivo) as pdf:
-        for pagina in pdf.pages:
-            texto = pagina.extract_text()
-            if not texto:
-                continue
-            lineas = texto.splitlines()
-            for linea in lineas:
-                if '$' not in linea:
-                    continue
-                palabras = linea.upper().split()
-                try:
-                    if 'PH' in palabras:
-                        i = palabras.index('PH')
-                        modelo = f"PH {palabras[i + 1]}"
-                        material = 'STRAW'
-                    elif 'RODEO' in palabras:
-                        i = palabras.index('RODEO')
-                        siguiente = palabras[i + 1] if i + 1 < len(palabras) else ''
-                        siguiente2 = palabras[i + 2] if i + 2 < len(palabras) else ''
-                        if siguiente == 'NIGHTS':
-                            modelo = 'RODEO NIGHTS' if siguiente2 in ['CATALOG', 'LEATHER'] else siguiente2
-                        else:
-                            modelo = siguiente
-                        material = 'FELT'
-                    elif any(m in palabras for m in ['STRAW', 'FELT']):
-                        if 'STRAW' in palabras:
-                            material = 'STRAW'
-                        else:
-                            material = 'FELT'
-                        modelo = next((w for w in palabras if w not in ['STRAW', 'FELT', '$'] and not w.startswith('$') and not w.replace('.', '', 1).isdigit()), 'DESCONOCIDO')
-                    else:
-                        continue
+    productos_raw = extraer_productos_pdf(ruta_archivo)
+    productos_contados = contar_productos(productos_raw)
 
-                    clave = (modelo.strip(), material)
-                    contador[clave] += 1
-                except:
-                    continue
-
-    for (modelo, material), qty in contador.items():
-        db.session.add(Producto(carpeta_id=carpeta_obj.id, modelo=modelo, material=material, qty=qty))
+    for p in productos_contados:
+        db.session.add(Producto(
+            carpeta_id=carpeta_obj.id,
+            modelo=p['modelo'],
+            material=p['material'],
+            qty=p['qty']
+        ))
 
     db.session.commit()
     return jsonify({'mensaje': 'Archivo subido y productos guardados'})
