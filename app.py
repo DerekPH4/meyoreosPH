@@ -7,7 +7,7 @@ from collections import defaultdict
 app = Flask(__name__)
 
 # Configuración para Neon PostgreSQL
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://neondb_owner:npg_f2VQrXhxT1Dy@ep-frosty-morning-a5fraizu-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://neondb_owner:npg_uceM7HVZ0Fvx@ep-billowing-cell-a4g5lpzg-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
