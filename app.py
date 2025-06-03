@@ -119,14 +119,12 @@ def subir_archivo(carpeta):
                         else:
                             modelo = siguiente
                         material = 'FELT'
-                    elif 'STRAW' in palabras:
-                        i = palabras.index('STRAW')
-                        modelo = palabras[i + 1] if i + 1 < len(palabras) else 'DESCONOCIDO'
-                        material = 'STRAW'
-                    elif 'FELT' in palabras:
-                        i = palabras.index('FELT')
-                        modelo = palabras[i + 1] if i + 1 < len(palabras) else 'DESCONOCIDO'
-                        material = 'FELT'
+                    elif any(m in palabras for m in ['STRAW', 'FELT']):
+                        if 'STRAW' in palabras:
+                            material = 'STRAW'
+                        else:
+                            material = 'FELT'
+                        modelo = next((w for w in palabras if w not in ['STRAW', 'FELT', '$'] and not w.startswith('$') and not w.replace('.', '', 1).isdigit()), 'DESCONOCIDO')
                     else:
                         continue
 
