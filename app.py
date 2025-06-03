@@ -6,6 +6,7 @@ from collections import defaultdict
 
 app = Flask(__name__)
 
+# Configuración para Neon PostgreSQL
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://neondb_owner:npg_f2VQrXhxT1Dy@ep-frosty-morning-a5fraizu-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -96,19 +97,41 @@ def subir_archivo(carpeta):
     contador = defaultdict(int)
     with pdfplumber.open(ruta_archivo) as pdf:
         for pagina in pdf.pages:
-            tabla = pagina.extract_table()
-            if tabla:
-                for fila in tabla:
-                    if not fila or len(fila) < 3:
+            texto = pagina.extract_text()
+            if not texto:
+                continue
+            lineas = texto.splitlines()
+            for linea in lineas:
+                if '$' not in linea:
+                    continue
+                palabras = linea.upper().split()
+                try:
+                    if 'PH' in palabras:
+                        i = palabras.index('PH')
+                        modelo = f"PH {palabras[i + 1]}"
+                        material = 'STRAW'
+                    elif 'RODEO' in palabras:
+                        i = palabras.index('RODEO')
+                        siguiente = palabras[i + 1] if i + 1 < len(palabras) else ''
+                        siguiente2 = palabras[i + 2] if i + 2 < len(palabras) else ''
+                        if siguiente == 'NIGHTS':
+                            modelo = 'RODEO NIGHTS' if siguiente2 in ['CATALOG', 'LEATHER'] else siguiente2
+                        else:
+                            modelo = siguiente
+                        material = 'FELT'
+                    elif any(m in palabras for m in ['STRAW', 'FELT']):
+                        if 'STRAW' in palabras:
+                            material = 'STRAW'
+                        else:
+                            material = 'FELT'
+                        modelo = next((w for w in palabras if w not in ['STRAW', 'FELT', '$'] and not w.startswith('$') and not w.replace('.', '', 1).isdigit()), 'DESCONOCIDO')
+                    else:
                         continue
-                    modelo = str(fila[0]).strip().upper()
-                    material = str(fila[1]).strip().upper()
-                    try:
-                        qty = int(fila[2])
-                        clave = (modelo, material)
-                        contador[clave] += qty
-                    except:
-                        continue
+
+                    clave = (modelo.strip(), material)
+                    contador[clave] += 1
+                except:
+                    continue
 
     for (modelo, material), qty in contador.items():
         db.session.add(Producto(carpeta_id=carpeta_obj.id, modelo=modelo, material=material, qty=qty))
@@ -161,5 +184,6 @@ def actualizar_tabla(carpeta):
     return jsonify({'mensaje': 'Tabla principal actualizada'})
 
 if __name__ == '__main__':
+    import os
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
