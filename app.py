@@ -81,24 +81,30 @@ def extraer_productos_pdf(path):
             tabla = page.extract_table()
             if not tabla:
                 continue
-            headers = [c.upper().strip() if c else '' for c in tabla[0]]
-            if 'MATERIAL' in headers and 'MODEL' in headers:
-                i_material = headers.index('MATERIAL')
-                i_modelo = headers.index('MODEL')
-                filas = tabla[1:]
 
-                # ✅ Solo omitir la primera fila de la primera página
-                if page_num == 0:
-                    filas = filas[1:]
+            headers = [c.strip().upper() if c else '' for c in tabla[0]]
+            i_material = i_modelo = None
+            for i, h in enumerate(headers):
+                if 'MATERIAL' in h:
+                    i_material = i
+                if 'MODEL' in h:
+                    i_modelo = i
+            if i_material is None or i_modelo is None:
+                continue
 
-                for fila in filas:
-                    if not fila or len(fila) <= max(i_material, i_modelo):
-                        continue
-                    material = fila[i_material].strip() if fila[i_material] else ''
-                    modelo = fila[i_modelo].strip() if fila[i_modelo] else ''
-                    if material and modelo:
-                        productos.append((material, modelo))
+            filas = tabla[1:]
+            if page_num == 0:
+                filas = filas[1:]
+
+            for fila in filas:
+                if not fila or len(fila) <= max(i_material, i_modelo):
+                    continue
+                material = fila[i_material].strip() if fila[i_material] else ''
+                modelo = fila[i_modelo].strip() if fila[i_modelo] else ''
+                if material and modelo:
+                    productos.append((material, modelo))
     return productos
+
 
 
 def contar_productos(productos):
