@@ -99,8 +99,9 @@ def extraer_productos_pdf(path):
             for fila in filas:
                 if not fila or len(fila) <= max(i_material, i_modelo):
                     continue
-                material = fila[i_material].strip() if fila[i_material] else ''
-                modelo = fila[i_modelo].strip() if fila[i_modelo] else ''
+                material = ' '.join(fila[i_material].split()).strip().title() if fila[i_material] else ''
+                modelo = ' '.join(fila[i_modelo].split()).strip().title() if fila[i_modelo] else ''
+
                 if material and modelo:
                     productos.append((material, modelo))
     return productos
@@ -110,7 +111,8 @@ def extraer_productos_pdf(path):
 def contar_productos(productos):
     conteo = defaultdict(int)
     for mat, mod in productos:
-        conteo[(mat, mod)] += 1
+        conteo[(mat.strip().title(), mod.strip().title())] += 1
+
     return [{'material': mat, 'modelo': mod, 'qty': qty} for (mat, mod), qty in conteo.items()]
 
 @app.route('/subir/<carpeta>', methods=['POST'])
