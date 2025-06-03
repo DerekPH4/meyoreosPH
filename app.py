@@ -114,14 +114,18 @@ def subir_archivo(carpeta):
                         i = palabras.index('RODEO')
                         siguiente = palabras[i + 1] if i + 1 < len(palabras) else ''
                         siguiente2 = palabras[i + 2] if i + 2 < len(palabras) else ''
-
                         if siguiente == 'NIGHTS':
-                            if siguiente2 in ['CATALOG', 'LEATHER']:
-                                modelo = 'RODEO NIGHTS'
-                            else:
-                                modelo = siguiente2
+                            modelo = 'RODEO NIGHTS' if siguiente2 in ['CATALOG', 'LEATHER'] else siguiente2
                         else:
-                            modelo = palabras[i + 1]
+                            modelo = siguiente
+                        material = 'FELT'
+                    elif 'STRAW' in palabras:
+                        i = palabras.index('STRAW')
+                        modelo = palabras[i + 1] if i + 1 < len(palabras) else 'DESCONOCIDO'
+                        material = 'STRAW'
+                    elif 'FELT' in palabras:
+                        i = palabras.index('FELT')
+                        modelo = palabras[i + 1] if i + 1 < len(palabras) else 'DESCONOCIDO'
                         material = 'FELT'
                     else:
                         continue
@@ -180,6 +184,7 @@ def actualizar_tabla(carpeta):
             db.session.add(Producto(carpeta_id=carpeta_obj.id, modelo=modelo, material=material, qty=qty))
     db.session.commit()
     return jsonify({'mensaje': 'Tabla principal actualizada'})
+
 if __name__ == '__main__':
     import os
     port = int(os.environ.get('PORT', 5000))
