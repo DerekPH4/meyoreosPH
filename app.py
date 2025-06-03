@@ -76,7 +76,8 @@ def listar_carpetas():
 def extraer_productos_pdf(path):
     productos = []
     with pdfplumber.open(path) as pdf:
-        for page in pdf.pages:
+        total_pages = len(pdf.pages)
+        for page_num, page in enumerate(pdf.pages):
             tabla = page.extract_table()
             if not tabla:
                 continue
@@ -84,7 +85,12 @@ def extraer_productos_pdf(path):
             if 'MATERIAL' in headers and 'MODEL' in headers:
                 i_material = headers.index('MATERIAL')
                 i_modelo = headers.index('MODEL')
-                for fila in tabla[1:]:
+                filas = tabla[1:]
+                if page_num == 0:
+                    filas = filas[1:]  # omitir primera fila de la primera página
+                if page_num == total_pages - 1:
+                    filas = filas[:-1]  # omitir última fila de la última página
+                for fila in filas:
                     if not fila or len(fila) <= max(i_material, i_modelo):
                         continue
                     material = fila[i_material].strip() if fila[i_material] else ''
