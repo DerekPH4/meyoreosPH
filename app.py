@@ -76,7 +76,6 @@ def listar_carpetas():
 def extraer_productos_pdf(path):
     productos = []
     with pdfplumber.open(path) as pdf:
-        total_pages = len(pdf.pages)
         for page_num, page in enumerate(pdf.pages):
             tabla = page.extract_table()
             if not tabla:
@@ -97,15 +96,22 @@ def extraer_productos_pdf(path):
                 filas = filas[1:]
 
             for fila in filas:
-                if not fila:
+                if not fila or len(fila) <= max(i_material, i_modelo):
                     continue
 
-                material = fila[i_material].strip().title() if i_material < len(fila) and fila[i_material] else ''
-                modelo = fila[i_modelo].strip().title() if i_modelo < len(fila) and fila[i_modelo] else ''
+                raw_material = fila[i_material]
+                raw_modelo = fila[i_modelo]
+
+                if not raw_material or not raw_modelo:
+                    continue
+
+                material = raw_material.strip().title()
+                modelo = raw_modelo.strip().title()
 
                 if material and modelo:
                     productos.append((material, modelo))
     return productos
+
 
 def contar_productos(productos):
     conteo = defaultdict(int)
