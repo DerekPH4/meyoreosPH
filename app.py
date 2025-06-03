@@ -86,10 +86,11 @@ def extraer_productos_pdf(path):
                 i_material = headers.index('MATERIAL')
                 i_modelo = headers.index('MODEL')
                 filas = tabla[1:]
+
+                # ✅ Solo omitir la primera fila de la primera página
                 if page_num == 0:
-                    filas = filas[1:]  # omitir primera fila de la primera página
-                if page_num == total_pages - 1:
-                    filas = filas[:-1]  # omitir última fila de la última página
+                    filas = filas[1:]
+
                 for fila in filas:
                     if not fila or len(fila) <= max(i_material, i_modelo):
                         continue
@@ -98,6 +99,7 @@ def extraer_productos_pdf(path):
                     if material and modelo:
                         productos.append((material, modelo))
     return productos
+
 
 def contar_productos(productos):
     conteo = defaultdict(int)
