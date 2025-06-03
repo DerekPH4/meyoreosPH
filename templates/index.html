@@ -154,19 +154,20 @@
           </tr>
         </thead>
         <tbody id="tabla-principal">
-          ${tablaJson.tabla.map(([model, material, qty]) => {
-            const isTotal = material === 'TOTAL';
-            return `
-              <tr style="${isTotal ? 'background:#b5002d;color:white;font-weight:bold;' : ''}" data-modelo="${model}" data-material="${material}" data-qty="${qty}">
-                <td>${isTotal ? '' : `<input type="checkbox">`}</td>
-                <td>${model}</td>
-                <td>${material}</td>
-                <td>${qty}</td>
-                <td>${isTotal ? '' : '<button onclick="eliminarFila(this)">❌</button>'}</td>
-              </tr>
-            `;
-          }).join('')}
-        </tbody>
+  ${tablaJson.tabla.map(([model, material, qty]) => {
+    const isTotal = material === 'TOTAL';
+    return `
+      <tr style="${isTotal ? 'background:#b5002d;color:white;font-weight:bold;' : ''}" data-modelo="${model}" data-material="${material}" data-qty="${qty}">
+        <td>${isTotal ? '' : `<input type="checkbox">`}</td>
+        <td>${model}</td>
+        <td>${material}</td>
+        <td>${qty}</td>
+        <td>${isTotal ? '' : '<button onclick="eliminarFila(this)">❌</button>'}</td>
+      </tr>
+    `;
+  }).join('')}
+</tbody>
+
       `;
       vista.appendChild(tabla);
 
