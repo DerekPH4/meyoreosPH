@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify, render_template
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
-import os, pdfplumber, re
+import os, pdfplumber
 from collections import defaultdict
 
 app = Flask(__name__)
@@ -75,24 +75,42 @@ def listar_carpetas():
 
 def extraer_productos_pdf(path):
     productos = []
-    patron = re.compile(r"^\s*([\w\-\s]+?)\s+([A-Z]+)\s+\$?\d+")
     with pdfplumber.open(path) as pdf:
-        for pagina in pdf.pages:
-            texto = pagina.extract_text()
-            if not texto:
+        total_pages = len(pdf.pages)
+        for page_num, page in enumerate(pdf.pages):
+            tabla = page.extract_table()
+            if not tabla:
                 continue
-            for linea in texto.splitlines():
-                match = patron.match(linea.strip())
-                if match:
-                    modelo = match.group(1).strip().title()
-                    material = match.group(2).strip().title()
+
+            headers = [c.strip().upper() if c else '' for c in tabla[0]]
+            i_material = i_modelo = None
+            for i, h in enumerate(headers):
+                if 'MATERIAL' in h:
+                    i_material = i
+                if 'MODEL' in h:
+                    i_modelo = i
+            if i_material is None or i_modelo is None:
+                continue
+
+            filas = tabla[1:]
+            if page_num == 0:
+                filas = filas[1:]
+
+            for fila in filas:
+                if not fila:
+                    continue
+
+                material = fila[i_material].strip().title() if i_material < len(fila) and fila[i_material] else ''
+                modelo = fila[i_modelo].strip().title() if i_modelo < len(fila) and fila[i_modelo] else ''
+
+                if material and modelo:
                     productos.append((material, modelo))
     return productos
 
 def contar_productos(productos):
     conteo = defaultdict(int)
     for mat, mod in productos:
-        conteo[(mat, mod)] += 1
+        conteo[(mat.strip().title(), mod.strip().title())] += 1
     return [{'material': mat, 'modelo': mod, 'qty': qty} for (mat, mod), qty in conteo.items()]
 
 @app.route('/subir/<carpeta>', methods=['POST'])
