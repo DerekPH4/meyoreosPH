@@ -78,39 +78,48 @@ def extraer_productos_pdf(path):
     with pdfplumber.open(path) as pdf:
         for page_num, page in enumerate(pdf.pages):
             tabla = page.extract_table()
-            if not tabla:
-                continue
-
-            headers = [c.strip().upper() if c else '' for c in tabla[0]]
-            i_material = i_modelo = None
-            for i, h in enumerate(headers):
-                if 'MATERIAL' in h:
-                    i_material = i
-                if 'MODEL' in h:
-                    i_modelo = i
-            if i_material is None or i_modelo is None:
-                continue
-
-            filas = tabla[1:]
-            if page_num == 0:
-                filas = filas[1:]
-
-            for fila in filas:
-                if not fila or len(fila) <= max(i_material, i_modelo):
+            if tabla:
+                headers = [c.strip().upper() if c else '' for c in tabla[0]]
+                i_material = i_modelo = None
+                for i, h in enumerate(headers):
+                    if 'MATERIAL' in h:
+                        i_material = i
+                    if 'MODEL' in h:
+                        i_modelo = i
+                if i_material is None or i_modelo is None:
                     continue
 
-                raw_material = fila[i_material]
-                raw_modelo = fila[i_modelo]
+                filas = tabla[1:]
+                if page_num == 0:
+                    filas = filas[1:]
 
-                if not raw_material or not raw_modelo:
-                    continue
-
-                material = raw_material.strip().title()
-                modelo = raw_modelo.strip().title()
-
-                if material and modelo:
+                for fila in filas:
+                    if not fila or len(fila) <= max(i_material, i_modelo):
+                        continue
+                    raw_material = fila[i_material]
+                    raw_modelo = fila[i_modelo]
+                    if not raw_material or not raw_modelo:
+                        continue
+                    material = raw_material.strip().title()
+                    modelo = raw_modelo.strip().title()
                     productos.append((material, modelo))
+
+            else:
+                # Alternativa: parsear texto si no hay tabla
+                texto = page.extract_text()
+                if not texto:
+                    continue
+                lineas = texto.split('\n')
+                for linea in lineas:
+                    partes = linea.strip().split()
+                    if len(partes) < 4:
+                        continue
+                    if partes[2].lower() == 'straw' or partes[2].lower() == 'felt':
+                        material = partes[2].title()
+                        modelo = partes[3].title()
+                        productos.append((material, modelo))
     return productos
+
 
 
 def contar_productos(productos):
