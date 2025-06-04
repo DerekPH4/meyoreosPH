@@ -91,26 +91,24 @@ def extraer_productos_pdf(path):
             if i_material is None or i_modelo is None:
                 continue
 
-            filas = tabla[1:]
-            if page_num == 0:
-                filas = filas[1:]
+            filas = tabla[1:]  # solo quita encabezado, no más
 
             for fila in filas:
                 if not fila or len(fila) <= max(i_material, i_modelo):
                     continue
 
-                raw_material = fila[i_material]
                 raw_modelo = fila[i_modelo]
+                raw_material = fila[i_material]
 
-                if not raw_material or not raw_modelo:
+                if not raw_modelo or not raw_material:
                     continue
 
                 modelo = raw_modelo.strip().title()
                 material = raw_material.strip().title()
-
-                productos.append((modelo, material))  # <-- ahora en el orden correcto
+                productos.append((modelo, material))
 
     return productos
+
 
 
 
