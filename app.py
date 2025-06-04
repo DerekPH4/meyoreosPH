@@ -78,24 +78,26 @@ def extraer_productos_pdf(path):
     productos = []
     with pdfplumber.open(path) as pdf:
         for page in pdf.pages:
-            texto = page.extract_text()
-            if not texto:
+            tabla = page.extract_table()
+            if not tabla:
                 continue
-            lineas = texto.split("\n")
-            for linea in lineas:
-                partes = re.split(r"\s{2,}|	", linea.strip())
-                if len(partes) < 5:
+
+            for fila in tabla:
+                if not fila or len(fila) < 4:
                     continue
 
-                posibles_materiales = [p for p in partes if any(m in p.lower() for m in ['straw', 'felt', 'bangora'])]
-                posibles_modelos = [p for p in partes if re.search(r"ph ?\d+|bangora|rodeo nights|black|choco|natural|white", p, re.I)]
+                material_raw = fila[2]  # Columna MATERIAL
+                modelo_raw = fila[3]    # Columna MODEL (en esta tabla está justo ahí)
 
-                if posibles_materiales and posibles_modelos:
-                    material = posibles_materiales[-1].strip().title()
-                    modelo = posibles_modelos[0].strip().title()
-                    productos.append((modelo, material))
+                if not material_raw or not modelo_raw:
+                    continue
+
+                material = material_raw.strip().title()
+                modelo = modelo_raw.strip().title()
+                productos.append((modelo, material))
 
     return productos
+
 
 def contar_productos(productos):
     conteo = defaultdict(int)
