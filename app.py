@@ -91,11 +91,12 @@ def extraer_productos_pdf(path):
             if i_material is None or i_modelo is None:
                 continue
 
-            filas = tabla[1:]
+            filas = tabla[1:]  # Quitamos encabezado SIEMPRE
             if page_num == 0:
-                filas = filas[1:]
+                filas = filas[1:]  # Además quitamos la primera fila en la primera página
 
             for fila in filas:
+                # Evita filas malformadas
                 if not fila or len(fila) <= max(i_material, i_modelo):
                     continue
 
@@ -105,22 +106,21 @@ def extraer_productos_pdf(path):
                 if not raw_material or not raw_modelo:
                     continue
 
-                modelo = raw_modelo.strip().title()
                 material = raw_material.strip().title()
+                modelo = raw_modelo.strip().title()
 
-                productos.append((modelo, material))  # <-- ahora en el orden correcto
-
+                if material and modelo:
+                    productos.append((material, modelo))
+    
     return productos
-
 
 
 
 def contar_productos(productos):
     conteo = defaultdict(int)
-    for modelo, material in productos:  # <-- ahora modelo primero
-        conteo[(modelo, material)] += 1
-    return [{'modelo': modelo, 'material': material, 'qty': qty}
-            for (modelo, material), qty in conteo.items()]
+    for mat, mod in productos:
+        conteo[(mat.strip().title(), mod.strip().title())] += 1
+    return [{'material': mat, 'modelo': mod, 'qty': qty} for (mat, mod), qty in conteo.items()]
 
 @app.route('/subir/<carpeta>', methods=['POST'])
 def subir_archivo(carpeta):
