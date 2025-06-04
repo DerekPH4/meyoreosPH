@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
 import os, pdfplumber
 from collections import defaultdict
+import re
 
 app = Flask(__name__)
 
@@ -76,48 +77,31 @@ def listar_carpetas():
 def extraer_productos_pdf(path):
     productos = []
     with pdfplumber.open(path) as pdf:
-        for page_num, page in enumerate(pdf.pages):
-            tabla = page.extract_table()
-            if not tabla:
+        for page in pdf.pages:
+            texto = page.extract_text()
+            if not texto:
                 continue
-
-            headers = [c.strip().upper() if c else '' for c in tabla[0]]
-            i_material = i_modelo = None
-            for i, h in enumerate(headers):
-                if 'MATERIAL' in h:
-                    i_material = i
-                if 'MODEL' in h:
-                    i_modelo = i
-            if i_material is None or i_modelo is None:
-                continue
-
-            filas = tabla[1:]  # solo quita encabezado, no más
-
-            for fila in filas:
-                if not fila or len(fila) <= max(i_material, i_modelo):
+            lineas = texto.split("\n")
+            for linea in lineas:
+                partes = re.split(r"\s{2,}|	", linea.strip())
+                if len(partes) < 5:
                     continue
 
-                raw_modelo = fila[i_modelo]
-                raw_material = fila[i_material]
+                posibles_materiales = [p for p in partes if any(m in p.lower() for m in ['straw', 'felt', 'bangora'])]
+                posibles_modelos = [p for p in partes if re.search(r"ph ?\d+|bangora|rodeo nights|black|choco|natural|white", p, re.I)]
 
-                if not raw_modelo or not raw_material:
-                    continue
-
-                modelo = raw_modelo.strip().title()
-                material = raw_material.strip().title()
-                productos.append((modelo, material))
+                if posibles_materiales and posibles_modelos:
+                    material = posibles_materiales[-1].strip().title()
+                    modelo = posibles_modelos[0].strip().title()
+                    productos.append((modelo, material))
 
     return productos
 
-
-
-
-
 def contar_productos(productos):
     conteo = defaultdict(int)
-    for mat, mod in productos:
-        conteo[(mat.strip().title(), mod.strip().title())] += 1
-    return [{'material': mat, 'modelo': mod, 'qty': qty} for (mat, mod), qty in conteo.items()]
+    for modelo, material in productos:
+        conteo[(modelo.strip().title(), material.strip().title())] += 1
+    return [{'modelo': modelo, 'material': material, 'qty': qty} for (modelo, material), qty in conteo.items()]
 
 @app.route('/subir/<carpeta>', methods=['POST'])
 def subir_archivo(carpeta):
