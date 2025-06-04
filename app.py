@@ -77,17 +77,22 @@ def listar_carpetas():
 def extraer_productos_pdf(path):
     productos = []
     with pdfplumber.open(path) as pdf:
-        for page in pdf.pages:
+        for page_index, page in enumerate(pdf.pages):
             tabla = page.extract_table()
             if not tabla:
                 continue
 
-            for fila in tabla:
+            filas = tabla
+            # Saltar encabezado solo en la primera página
+            if page_index == 0 and len(filas) > 1:
+                filas = filas[1:]
+
+            for fila in filas:
                 if not fila or len(fila) < 4:
                     continue
 
                 material_raw = fila[2]  # Columna MATERIAL
-                modelo_raw = fila[3]    # Columna MODEL (en esta tabla está justo ahí)
+                modelo_raw = fila[3]    # Columna MODEL o COLOR
 
                 if not material_raw or not modelo_raw:
                     continue
@@ -97,6 +102,7 @@ def extraer_productos_pdf(path):
                 productos.append((modelo, material))
 
     return productos
+
 
 
 def contar_productos(productos):
